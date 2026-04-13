@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>V5 · Лист персонажа</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      background: #1a0e0b;
+      background-image: radial-gradient(circle at 20% 30%, #2c1a14 0%, #0d0705 100%);
+      font-family: 'Segoe UI', 'Candara', 'Palatino', system-ui, -apple-system, sans-serif;
+      color: #e6d6c0;
+      padding: 0.5rem;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .chronicle-sheet {
+      max-width: 1200px;
+      width: 100%;
+      background: rgba(20, 12, 10, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid #6a3f2b;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #2f1a12 inset;
+      padding: 1rem;
+      border-radius: 8px;
+      position: relative;
+    }
+    
+    h2, h3 {
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #7a4e3a;
+      padding-bottom: 0.3rem;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      color: #cfb095;
+      font-size: 1.1rem;
+    }
+    
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    .grid-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+    .field { margin-bottom: 0.8rem; display: flex; flex-direction: column; }
+    label {
+      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #bc9a84; margin-bottom: 3px;
+    }
+    input, select, textarea {
+      background: #1f130e; border: 1px solid #644432; color: #f2e0d0;
+      padding: 8px 8px; font-family: inherit; font-size: 0.9rem; border-radius: 4px;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #b66b4a; box-shadow: 0 0 6px #7a2e1a; outline: none; }
+    textarea { min-height: 50px; resize: vertical; }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dashed #b66b4a;
+    }
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 280px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #1a0f0b;
+      border: 2px solid #854c34;
+      color: #e6d6c0;
+      text-align: left;
+      padding: 12px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 1000;
+      bottom: 125%;
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      font-size: 0.7rem;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    .tooltip .tooltip-text strong { color: #d99173; }
+    .tooltip .tooltip-text h4 { margin: 8px 0 4px; color: #cfb095; font-size: 0.8rem; }
+    .tooltip .tooltip-text ul { margin: 0; padding-left: 16px; }
+    .tooltip:active .tooltip-text { visibility: visible; opacity: 1; }
+    @media (hover: hover) { .tooltip:hover .tooltip-text { visibility: visible; opacity: 1; } }
+    
+    /* Большая подсказка-справка */
+    .help-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: #4a2c1f;
+      border: 1px solid #b77a5a;
+      border-radius: 50%;
+      color: #f0ded0;
+      font-size: 14px;
+      cursor: help;
+      margin-left: 8px;
+    }
+    .help-tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .help-tooltip .help-content {
+      visibility: hidden;
+      width: 350px;
+      max-height: 500px;
+      overflow-y: auto;
+      background: #1a0f0b;
+      border: 2px solid #854c34;
+      color: #e6d6c0;
+      text-align: left;
+      padding: 15px;
+      border-radius: 8px;
+      position: absolute;
+      z-index: 1000;
+      top: 100%;
+      right: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+      font-size: 0.75rem;
+      line-height: 1.6;
+      pointer-events: none;
+    }
+    .help-tooltip:active .help-content { visibility: visible; opacity: 1; pointer-events: auto; }
+    @media (hover: hover) { .help-tooltip:hover .help-content { visibility: visible; opacity: 1; pointer-events: auto; } }
+    .help-content h3 { margin-top: 0; border-bottom-color: #b66b4a; }
+    .help-content h4 { margin: 12px 0 5px; color: #d99173; }
+    .help-content ul { margin: 0 0 10px; padding-left: 20px; }
+    .help-content li { margin-bottom: 3px; }
+    
+    .age-info {
+      background: #1a0f0b; border: 1px solid #5e3e2e;
+      border-radius: 4px; padding: 8px 10px; margin-top: 5px;
+      font-size: 0.75rem; color: #c9aa92;
+    }
+    
+    .attr-row { display: flex; align-items: center; gap: 5px; }
+    .attr-name { width: 100px; text-transform: uppercase; font-size: 0.8rem; }
+    .dot-selector { display: flex; gap: 4px; }
+    .dot {
+      width: 22px; height: 22px; border-radius: 50%; background: #2a1812;
+      border: 1.5px solid #7e4f3a; cursor: pointer; box-shadow: inset 0 1px 3px black;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dot.filled { background: #b84c2c; border-color: #e07a5a; box-shadow: 0 0 6px #c24f2a; }
+    
+    .stats-horizontal { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .category-group { width: 100%; }
+    .category-title {
+      font-weight: bold; color: #c9aa92; margin: 8px 0 5px;
+      border-left: 3px solid #9f5e42; padding-left: 8px; font-size: 0.85rem;
+    }
+    
+    .skills-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+    .skill-item { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+    .skill-name { width: 120px; font-size: 0.8rem; }
+    .skill-spec { flex: 1; min-width: 120px; }
+    .skill-spec input { padding: 5px 6px; font-size: 0.8rem; background: #1e120d; width: 100%; }
+    
+    .tracker-box {
+      background: #1f130e; border: 1px solid #7a4e3a; padding: 10px;
+      margin: 10px 0 15px; border-radius: 6px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .tracker-spec-choices, .tracker-disc-choices {
+      display: flex; flex-direction: column; gap: 8px;
+      background: #2a1812; padding: 10px; border-radius: 4px;
+    }
+    .spec-choice-item, .disc-choice-item {
+      display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
+    }
+    .tracker-badge {
+      background: #2c1a14; padding: 4px 8px; border-radius: 20px;
+      border: 1px solid #9f5e42; display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; margin-right: 5px;
+    }
+    
+    .discipline-row {
+      background: #1e110b; margin-bottom: 12px; padding: 10px;
+      border-left: 4px solid #854c34; border-radius: 4px;
+    }
+    .inline-dot { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    
+    .merit-flaw-item {
+      background: #1a0f0b; padding: 8px; margin-bottom: 8px;
+      border: 1px dashed #5e3e2e; display: flex; flex-direction: column; gap: 5px;
+      border-radius: 4px;
+    }
+    .merit-flaw-item input { width: 100%; }
+    
+    .blood-potency-table {
+      display: flex; flex-direction: column; gap: 5px; margin-top: 10px;
+    }
+    .blood-potency-table > div { display: flex; justify-content: space-between; align-items: center; }
+    .blood-potency-table input { width: 60%; }
+    
+    button {
+      background: #4a2c1f; border: 1px solid #b77a5a; color: #f0ded0;
+      padding: 10px 12px; text-transform: uppercase; letter-spacing: 1px;
+      cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button:active { background: #7a4531; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .character-manager {
+      background: #1a0f0b; border: 1px solid #7a4e3a;
+      border-radius: 8px; padding: 12px; margin-bottom: 20px;
+    }
+    .manager-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 15px; flex-wrap: wrap;
+    }
+    .manager-title {
+      font-size: 1rem; color: #d4b8a8;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .character-list {
+      display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
+    }
+    .character-card {
+      background: #241410; border: 1px solid #5e3e2e;
+      border-radius: 6px; padding: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .character-info { flex: 1; }
+    .character-name { font-size: 1rem; color: #e6d6c0; margin-bottom: 3px; }
+    .character-details { font-size: 0.7rem; color: #a58370; }
+    .character-actions { display: flex; gap: 5px; }
+    .character-actions button { padding: 6px 8px; font-size: 0.7rem; }
+    .btn-primary { background: #6b3a2a; border-color: #d99173; }
+    .btn-danger { background: #4a1a1a; border-color: #a04040; }
+    
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9); z-index: 1000;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-content {
+      background: #1f130e; border: 2px solid #854c34;
+      padding: 20px; border-radius: 8px; width: 100%; max-width: 350px;
+    }
+    .modal-content h3 { margin-top: 0; color: #d4b8a8; font-size: 1.1rem; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+    
+    .summary-line { display: flex; gap: 15px; margin: 10px 0; flex-wrap: wrap; }
+    .badge { background: #22130e; padding: 5px 12px; border-radius: 20px; border: 1px solid #84604c; font-size: 0.85rem; }
+    
+    .xp-tracker {
+      position: fixed;
+      bottom: 10px; right: 10px; left: 10px;
+      background: #1a0f0b;
+      border: 2px solid #854c34;
+      border-radius: 30px;
+      padding: 10px 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+    }
+    .xp-tracker .xp-value {
+      font-size: 1.8rem; font-weight: bold; color: #d4b8a8;
+      min-width: 50px; text-align: center;
+    }
+    .xp-tracker .xp-label { font-size: 0.65rem; text-transform: uppercase; color: #a58370; }
+    .xp-tracker button { padding: 6px 10px; font-size: 0.75rem; border-radius: 20px; }
+    .xp-spend-mode { border: 2px solid #d99173 !important; }
+    .xp-cost-badge {
+      background: #2c1a14; border: 1px solid #9f5e42;
+      border-radius: 20px; padding: 4px 8px; font-size: 0.7rem; color: #d99173;
+    }
+    #xpSpendInfo { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    
+    @media (min-width: 600px) {
+      body { padding: 2rem 1rem; }
+      .chronicle-sheet { padding: 2rem 2.2rem; }
+      h2 { font-size: 1.3rem; margin-top: 2rem; }
+      .grid-2col { gap: 1.2rem 2rem; }
+      .grid-3col { gap: 1.2rem 2rem; }
+      label { font-size: 0.8rem; }
+      input, select, textarea { font-size: 1rem; padding: 8px 10px; }
+      .stats-horizontal { flex-direction: row; flex-wrap: wrap; gap: 20px 40px; }
+      .category-group { min-width: 200px; }
+      .attr-name { width: 130px; font-size: 1rem; }
+      .dot { width: 24px; height: 24px; }
+      .skills-container { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .skill-name { width: 140px; font-size: 0.9rem; }
+      .merit-flaw-item { flex-direction: row; }
+      .blood-potency-table { display: grid; grid-template-columns: 1fr 2fr; }
+      .blood-potency-table > div { display: contents; }
+      .blood-potency-table input { width: 100%; }
+      .xp-tracker { left: auto; width: auto; min-width: 300px; bottom: 20px; right: 20px; }
+      .help-tooltip .help-content { width: 450px; max-height: 600px; }
+    }
+    
+    @media (min-width: 900px) {
+      .skills-container { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="saveModal">
+  <div class="modal-content">
+    <h3><i class="fas fa-save"></i> Сохранить персонажа</h3>
+    <div class="field">
+      <label>Имя персонажа</label>
+      <input type="text" id="saveCharName" placeholder="Введите имя...">
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeSaveModal()">Отмена</button>
+      <button class="btn-primary" onclick="confirmSave()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="xp-tracker" id="xpTracker">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <div>
+      <div class="xp-label">Опыт</div>
+      <div class="xp-value" id="xpDisplay">0</div>
+    </div>
+    <button id="addXPBtn" style="background: #3a2018;"><i class="fas fa-plus"></i></button>
+  </div>
+  <div style="display: flex; gap: 5px;">
+    <button id="toggleSpendModeBtn" style="background: #4a2c1f;"><i class="fas fa-coins"></i></button>
+    <div id="xpSpendInfo" style="display: none;">
+      <span class="xp-cost-badge" id="xpCostDisplay">0 XP</span>
+      <button id="applyXPSpendBtn"><i class="fas fa-check"></i></button>
+      <button id="cancelXPSpendBtn"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="chronicle-sheet" id="characterSheet">
+  <div class="character-manager">
+    <div class="manager-header">
+      <span class="manager-title"><i class="fas fa-users"></i> Персонажи</span>
+      <button class="btn-primary" onclick="openSaveModal()"><i class="fas fa-save"></i></button>
+      <button onclick="createNewCharacter()"><i class="fas fa-plus"></i></button>
+      <button onclick="exportAllCharacters()"><i class="fas fa-download"></i></button>
+      <label style="margin-left: auto;">
+        <i class="fas fa-upload"></i>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <button onclick="document.getElementById('importFile').click()" style="padding:6px 10px;"><i class="fas fa-file-import"></i></button>
+      </label>
+    </div>
+    <div id="characterList" class="character-list"></div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+    <h2 style="border-bottom:none; margin:0;"><i class="fas fa-moon"></i> V5 <i class="fas fa-crown"></i></h2>
+    <div class="help-tooltip">
+      <span class="help-icon"><i class="fas fa-question"></i></span>
+      <div class="help-content">
+        <h3>📖 СОЗДАНИЕ ПЕРСОНАЖА</h3>
+        
+        <h4>КОНЦЕПЦИЯ</h4>
+        <ul><li>Имя при жизни, занятие, где и когда Становление, текущее имя, место обитания.</li></ul>
+        
+        <h4>КЛАН И СИР</h4>
+        <ul><li>Выбери клан, запиши сира и важных членов фракции.</li></ul>
+        
+        <h4>ХАРАКТЕРИСТИКИ</h4>
+        <ul><li>Одна 4, три по 3, четыре по 2, одна 1</li><li>Здоровье = Выносливость + 3</li><li>Воля = Упорство + Самообладание</li></ul>
+        
+        <h4>НАВЫКИ</h4>
+        <ul><li><strong>Мастер:</strong> 1×3, 8×2, 10×1</li><li><strong>Гармония:</strong> 3×3, 5×2, 7×1</li><li><strong>Спец:</strong> 1×4, 3×3, 3×2, 3×1</li></ul>
+        <p>Специализации: по 1 бесплатной для гуманитарных/естественных наук, исполнения, ремесла + 1 любая.</p>
+        
+        <h4>ДИСЦИПЛИНЫ</h4>
+        <ul><li><strong>Обычный вампир:</strong> 2 клановые: 2 в одну, 1 в другую.</li><li><strong>Каитиф:</strong> любые 2: 2 в одну, 1 в другую.</li><li><strong>Слабокровные:</strong> без дисциплин.</li></ul>
+        
+        <h4>СТИЛЬ ОХОТЫ</h4>
+        <ul><li>Выбери стиль, добавь специализацию, +1 в указанную дисциплину, получи преимущества/недостатки.</li></ul>
+        
+        <h4>ПРЕИМУЩЕСТВА И НЕДОСТАТКИ</h4>
+        <ul><li>7 пунктов преимуществ, 2 пункта недостатков.</li><li>Слабокровные: +1-3 достоинств и недостатков слабокровных.</li></ul>
+        
+        <h4>ПРИНЦИПЫ И ОПОРЫ</h4>
+        <ul><li>1-3 принципа, для каждого — опора (персонаж). Человечность = 7.</li></ul>
+        
+        <h4>В ОКЕАНЕ ВЕЧНОСТИ</h4>
+        <ul><li><strong>Птенцы:</strong> &lt;15 лет, 14-16 (BP0) или 12-13 (BP1)</li>
+        <li><strong>Неонаты:</strong> >1940, 12-13 (BP1), +15 XP</li>
+        <li><strong>Анциллы:</strong> 1780-1940, 10-11 (BP2), +2 преим, +2 нед, Чел -1, +35 XP</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Остальной HTML без изменений -->
+  <div class="grid-2col">
+    <div class="field"><label>Имя</label><input type="text" id="charName" placeholder="Имя"></div>
+    <div class="field"><label>Хроника</label><input type="text" id="chronicle" placeholder="Хроника"></div>
+    <div class="field"><label>Сир</label><input type="text" id="sire" placeholder="Сир"></div>
+    <div class="field"><label>Концепция</label><input type="text" id="concept" placeholder="Концепция"></div>
+  </div>
+  
+  <div class="grid-3col">
+    <div class="field"><label>Цель</label><input type="text" id="ambition" placeholder="Цель"></div>
+    <div class="field"><label>Прихоть</label><input type="text" id="whim" placeholder="Прихоть"></div>
+    <div class="field"><label>Желание</label><input type="text" id="desire" placeholder="Желание"></div>
+  </div>
+  
+  <div class="grid-2col">
+    <div class="field">
+      <label><span class="tooltip">Океан вечности <i class="fas fa-info-circle"></i>
+        <span class="tooltip-text">
+          <strong>Птенец:</strong> 14-16 или 12-13, BP1, 7/2<br>
+          <strong>Неонат:</strong> 12-13, BP1, 15 XP, 7/2<br>
+          <strong>Анцилла:</strong> 9-11, BP2, Hum-1, 9/4, 35 XP
+        </span>
+      </span></label>
+      <select id="ageEra">
+        <option value="">-- Эпоха --</option>
+        <option value="fledgling">Птенец</option>
+        <option value="neonate">Неонат</option>
+        <option value="ancilla">Анцилла</option>
+      </select>
+      <div id="ageInfo" class="age-info"></div>
+    </div>
+    <div class="field">
+      <label>Стиль охоты</label>
+      <select id="huntingStyle">
+        <option value="">-- Стиль --</option>
+        <option>Бестия</option><option>Джентльмен</option><option>Идол</option><option>Искуситель</option>
+        <option>Морфей</option><option>Налетчик</option><option>Семьянин</option><option>Суррогатчик</option>
+        <option>Тусовщик</option><option>Фермер</option><option>Вымогатель</option><option>Расхититель могил</option>
+        <option>Мрачный жнец</option><option>Монтеро</option><option>Преследователь</option><option>Лазутчик</option>
+      </select>
+      <div id="huntingWarning" class="warning-text"></div>
+    </div>
+    <div class="field"><label>Клан</label>
+      <select id="clan">
+        <option>Бану Хаким</option><option>Бруха</option><option>Гангрел</option><option>Геката</option>
+        <option>Ласомбра</option><option>Малкавиане</option><option>Министри</option><option>Носферату</option>
+        <option>Равнос</option><option>Салюбри</option><option>Тореадор</option><option>Тремер</option>
+        <option>Цимисхи</option><option>Вентру</option>
+      </select>
+    </div>
+    <div class="field"><label>Поколение</label>
+      <select id="generation">
+        <option>16-е</option><option>15-е</option><option>14-е</option><option>13-е</option><option>12-е</option>
+        <option>11-е</option><option>10-е</option><option>9-е</option>
+      </select>
+    </div>
+  </div>
+
+  <h2><i class="fas fa-fist-raised"></i> Характеристики</h2>
+  <div id="attrTracker" class="tracker-box" style="margin-bottom:10px;"></div>
+  <div class="stats-horizontal" id="attributesArea"></div>
+  <button id="resetAttrsBtn" style="margin-bottom:15px;">Сбросить к схеме</button>
+
+  <div class="summary-line">
+    <div class="badge"><i class="fas fa-heartbeat"></i> ❤️ <span id="healthValue">0</span></div>
+    <div class="badge"><i class="fas fa-brain"></i> 🧠 <span id="willValue">0</span></div>
+  </div>
+
+  <h2><i class="fas fa-tools"></i> Навыки</h2>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+    <select id="skillSchemeSelect" style="flex:2;">
+      <option value="jack">Мастер (1x3,7x2,10x1)</option>
+      <option value="balanced" selected>Гармония (3x3,5x2,7x1)</option>
+      <option value="specialist">Спец (1x4,3x3,3x2,3x1)</option>
+    </select>
+    <button id="applySkillScheme" style="flex:1;">Применить</button>
+  </div>
+  <div id="skillTracker" class="tracker-box">
+    <div id="pointsRemaining"></div>
+    <div id="discPointsTracker"></div>
+    <div id="huntingSpecChoices" class="tracker-spec-choices"></div>
+    <div id="huntingDiscChoices" class="tracker-disc-choices"></div>
+  </div>
+  <div id="skillsContainer" class="skills-container"></div>
+
+  <h2><i class="fas fa-skull"></i> Дисциплины</h2>
+  <div id="disciplinesList"></div>
+  <button id="addDisciplineBtn"><i class="fas fa-plus-circle"></i> Добавить</button>
+
+  <h2><i class="fas fa-balance-scale"></i> Человечность</h2>
+  <div class="inline-dot"><span>Человечность:</span><div id="humanityDots" class="dot-selector"></div><span id="humanityValLabel">7</span></div>
+
+  <div class="grid-2col">
+    <div class="field"><label>Тема хроники</label><textarea id="chronicleTheme" rows="2"></textarea></div>
+    <div class="field"><label>Опоры и принципы</label><textarea id="touchstones" rows="2"></textarea></div>
+  </div>
+  <div class="field"><label>Клановый Изъян</label><input type="text" id="clanBane"></div>
+
+  <h2><i class="fas fa-gem"></i> Достоинства/недостатки</h2>
+  <div id="meritsFlawsContainer"></div>
+  <button id="addMeritFlawBtn"><i class="fas fa-plus"></i> Добавить</button>
+
+  <h2><i class="fas fa-tint"></i> Сила крови</h2>
+  <div class="inline-dot"><span>Сила крови:</span><div id="bloodPotencyDots" class="dot-selector"></div><span id="bpValLabel">1</span></div>
+  <div class="blood-potency-table" id="bpTable"></div>
+</div>
+
+<script>
+(function(){
+    "use strict";
+    
+    const STORAGE_KEY = 'vampireV5_characters_v6';
+    const clanDisciplines = {
+      'Бану Хаким': ['Стремительность', 'Сокрытие', 'Кровавое чародейство'],
+      'Бруха': ['Стремительность', 'Могущество', 'Величие'],
+      'Гангрел': ['Метаморфозы', 'Стойкость', 'Анимализм'],
+      'Геката': ['Стойкость', 'Обливион', 'Ясновидение'],
+      'Ласомбра': ['Доминирование', 'Могущество', 'Обливион'],
+      'Малкавиане': ['Доминирование', 'Сокрытие', 'Ясновидение'],
+      'Министри': ['Величие', 'Сокрытие', 'Метаморфозы'],
+      'Носферату': ['Сокрытие', 'Могущество', 'Анимализм'],
+      'Равнос': ['Величие', 'Сокрытие', 'Анимализм'],
+      'Салюбри': ['Стойкость', 'Доминирование', 'Ясновидение'],
+      'Тореадор': ['Стремительность', 'Ясновидение', 'Величие'],
+      'Тремер': ['Кровавое чародейство', 'Доминирование', 'Ясновидение'],
+      'Цимисхи': ['Анимализм', 'Доминирование', 'Метаморфозы'],
+      'Вентру': ['Величие', 'Доминирование', 'Стойкость']
+    };
+    const attrCategories = [
+      {category:'Физические', list:['Сила','Ловкость','Выносливость']},
+      {category:'Социальные', list:['Обаяние','Манипуляция','Самообладание']},
+      {category:'Ментальные', list:['Интеллект','Смекалка','Упорство']}
+    ];
+    const flatAttrNames = ['Сила','Ловкость','Выносливость','Обаяние','Манипуляция','Самообладание','Интеллект','Смекалка','Упорство'];
+    const skillsList = [
+      'Атлетика','Вождение','Воровство','Выживание','Драка','Ремесло','Скрытность','Стрельба','Фехтование',
+      'Запугивание','Исполнение','Лидерство','Обращение с животными','Проницательность','Убеждение','Уличное чутьё','Хитрость','Этикет',
+      'Гуманитарные науки','Естественные науки','Медицина','Наблюдательность','Оккультизм','Политика','Расследование','Техника','Финансы'
+    ];
+    const allDisciplineNames = ['Анимализм','Ясновидение','Кровавое чародейство','Стремительность','Доминирование','Стойкость','Сокрытие','Обливион','Могущество','Величие','Метаморфозы','Ритуалы','Церемонии'];
+    const bpTableData = {
+      1: { surge: '+2d10', heal: '1 лёгкое', discMod: 'Нет', rouse: 'Уровень 1', bane: '2', feeding: 'Нет' },
+      2: { surge: '+2d10', heal: '2 лёгких', discMod: '+1d10', rouse: 'Уровень 1', bane: '2', feeding: 'Донорская кровь из пакетов и кровь животных утоляет' },
+      3: { surge: '+3d10', heal: '2 лёгких', discMod: '+1d10', rouse: 'Уровень 1–2', bane: '3', feeding: 'Донорская кровь из пакетов и кровь животных вообще не утоляет жажду' },
+      4: { surge: '+3d10', heal: '3 лёгких', discMod: '+2d10', rouse: 'Уровень 1–2', bane: '3', feeding: 'Донорская кровь/животные не утоляют Голод. Укус человека убирает на 1 пункт Голода меньше' },
+      5: { surge: '+4d10', heal: '3 лёгких', discMod: '+2d10', rouse: 'Уровень 1–3', bane: '4', feeding: 'Пакеты/животные не утоляют. Укус -1 Голод. Без убийства Голод минимум 2' },
+      6: { surge: '+4d10', heal: '3 лёгких', discMod: '+3d10', rouse: 'Уровень 1–3', bane: '4', feeding: 'Пакеты/животные не утоляют. Укус -2 Голод. Без убийства Голод минимум 2' },
+      7: { surge: '+5d10', heal: '3 лёгких', discMod: '+3d10', rouse: 'Уровень 1–4', bane: '5', feeding: 'Как и в предыдущем' },
+      8: { surge: '+5d10', heal: '4 лёгких', discMod: '+4d10', rouse: 'Уровень 1–4', bane: '5', feeding: 'Пакеты/животные не утоляют. Укус -2 Голод. Без убийства Голод минимум 3' },
+      9: { surge: '+6d10', heal: '4 лёгких', discMod: '+4d10', rouse: 'Уровень 1–5', bane: '6', feeding: 'Как и в предыдущем' },
+      10: { surge: '+6d10', heal: '5 лёгких', discMod: '+5d10', rouse: 'Уровень 1–5', bane: '6', feeding: 'Пакеты/животные не утоляют. Укус -3 Голод. Без убийства Голод минимум 3' }
+    };
+
+    let attributes = Object.fromEntries(flatAttrNames.map(n=>[n,0]));
+    let skills = Object.fromEntries(skillsList.map(s=>[s,0]));
+    let skillSpecs = Object.fromEntries(skillsList.map(s=>[s,'']));
+    let disciplines = [];
+    let humanity = 7, bloodPotency = 1;
+    let meritsFlaws = [];
+    let totalXP = 0;
+    
+    let huntingSpecOptions = [], huntingDiscOptions = [];
+    let disciplinePointsRemaining = { two: 1, one: 1 };
+    let baseMeritPoints = 7, baseFlawPoints = 2;
+    
+    let spendMode = false;
+    let baselineSnapshot = null;
+    let pendingXPCost = 0;
+    let usedDisciplines = new Set();
+
+    function updateAgeInfo() {
+      const era = document.getElementById('ageEra').value;
+      const genSelect = document.getElementById('generation');
+      let infoText = '';
+      switch(era) {
+        case 'fledgling':
+          infoText = '<i class="fas fa-baby"></i> <strong>Птенец:</strong> 7/2 преим/недост, BP 1, 0 XP';
+          genSelect.innerHTML = '<option>16-е</option><option>15-е</option><option>14-е</option><option>13-е</option><option>12-е</option>';
+          genSelect.value = '13-е';
+          setBloodPotency(1);
+          baseMeritPoints = 7; baseFlawPoints = 2;
+          setXP(0);
+          break;
+        case 'neonate':
+          infoText = '<i class="fas fa-user"></i> <strong>Неонат:</strong> 7/2 преим/недост, BP 1, 15 XP';
+          genSelect.innerHTML = '<option>13-е</option><option>12-е</option>';
+          genSelect.value = '13-е';
+          setBloodPotency(1);
+          baseMeritPoints = 7; baseFlawPoints = 2;
+          setXP(15);
+          break;
+        case 'ancilla':
+          infoText = '<i class="fas fa-crown"></i> <strong>Анцилла:</strong> 9/4 преим/недост, BP 2, Человечность -1, 35 XP';
+          genSelect.innerHTML = '<option>11-е</option><option>10-е</option><option>9-е</option>';
+          genSelect.value = '11-е';
+          setBloodPotency(2);
+          setHumanity(Math.max(1, humanity - 1));
+          baseMeritPoints = 9; baseFlawPoints = 4;
+          setXP(35);
+          break;
+        default:
+          infoText = '<i class="fas fa-hourglass-half"></i> Выберите эпоху';
+          genSelect.innerHTML = '<option>16-е</option><option>15-е</option><option>14-е</option><option>13-е</option><option>12-е</option><option>11-е</option><option>10-е</option><option>9-е</option>';
+      }
+      document.getElementById('ageInfo').innerHTML = infoText;
+    }
+
+    function setXP(value) { totalXP = value; updateXPDisplay(); }
+    function updateXPDisplay() { document.getElementById('xpDisplay').textContent = totalXP; }
+
+    function calculateXPCost() {
+      if (!baselineSnapshot) return 0;
+      let cost = 0;
+      const clan = document.getElementById('clan').value;
+      const clanDiscs = clanDisciplines[clan] || [];
+      
+      flatAttrNames.forEach(attr => {
+        const oldVal = baselineSnapshot.attributes[attr] || 0;
+        const newVal = attributes[attr] || 0;
+        if (newVal > oldVal) for (let i = oldVal + 1; i <= newVal; i++) cost += i * 5;
+      });
+      
+      skillsList.forEach(skill => {
+        const oldVal = baselineSnapshot.skills[skill] || 0;
+        const newVal = skills[skill] || 0;
+        if (newVal > oldVal) for (let i = oldVal + 1; i <= newVal; i++) cost += i * 3;
+      });
+      
+      skillsList.forEach(skill => {
+        const oldSpecs = (baselineSnapshot.skillSpecs[skill] || '').split(',').map(s=>s.trim()).filter(s=>s);
+        const newSpecs = (skillSpecs[skill] || '').split(',').map(s=>s.trim()).filter(s=>s);
+        cost += newSpecs.filter(s => !oldSpecs.includes(s)).length * 3;
+      });
+      
+      const oldDiscs = baselineSnapshot.disciplines || [];
+      disciplines.forEach(disc => {
+        const oldDisc = oldDiscs.find(d => d.name === disc.name);
+        const oldVal = oldDisc ? oldDisc.dots : 0;
+        const newVal = disc.dots;
+        const isClan = clanDiscs.includes(disc.name);
+        const isRitual = disc.name === 'Ритуалы' || disc.name === 'Церемонии';
+        if (newVal > oldVal) {
+          for (let i = oldVal + 1; i <= newVal; i++) {
+            if (isRitual) cost += i * 3;
+            else if (isClan) cost += i * 5;
+            else cost += i * 7;
+          }
+        }
+      });
+      
+      const oldMerits = baselineSnapshot.meritsFlaws || [];
+      meritsFlaws.forEach(m => {
+        const old = oldMerits.find(om => om.name === m.name);
+        const oldCost = old ? old.cost : 0;
+        if (m.cost > oldCost) cost += (m.cost - oldCost) * 3;
+      });
+      
+      if (bloodPotency > (baselineSnapshot.bloodPotency || 1)) cost += bloodPotency * 10;
+      
+      return cost;
+    }
+
+    function takeSnapshot() {
+      return {
+        attributes: {...attributes},
+        skills: {...skills},
+        skillSpecs: {...skillSpecs},
+        disciplines: disciplines.map(d => ({...d})),
+        meritsFlaws: meritsFlaws.map(m => ({...m})),
+        bloodPotency
+      };
+    }
+
+    function startSpendMode() {
+      baselineSnapshot = takeSnapshot();
+      spendMode = true;
+      document.getElementById('characterSheet').classList.add('xp-spend-mode');
+      document.getElementById('xpSpendInfo').style.display = 'flex';
+      document.getElementById('toggleSpendModeBtn').innerHTML = '<i class="fas fa-check"></i>';
+      updatePendingCost();
+    }
+
+    function updatePendingCost() {
+      if (spendMode) {
+        pendingXPCost = calculateXPCost();
+        document.getElementById('xpCostDisplay').textContent = `${pendingXPCost} XP`;
+      }
+    }
+
+    function applyXPSpend() {
+      if (pendingXPCost > totalXP) {
+        alert(`Недостаточно опыта! Нужно ${pendingXPCost}, есть ${totalXP}`);
+        return;
+      }
+      totalXP -= pendingXPCost;
+      updateXPDisplay();
+      exitSpendMode(true);
+    }
+
+    function cancelXPSpend() {
+      if (baselineSnapshot) {
+        Object.assign(attributes, baselineSnapshot.attributes);
+        Object.assign(skills, baselineSnapshot.skills);
+        Object.assign(skillSpecs, baselineSnapshot.skillSpecs);
+        disciplines = baselineSnapshot.disciplines.map(d => ({...d}));
+        meritsFlaws = baselineSnapshot.meritsFlaws.map(m => ({...m}));
+        bloodPotency = baselineSnapshot.bloodPotency;
+        renderAll();
+      }
+      exitSpendMode(false);
+    }
+
+    function exitSpendMode(saveChanges) {
+      spendMode = false;
+      baselineSnapshot = null;
+      document.getElementById('characterSheet').classList.remove('xp-spend-mode');
+      document.getElementById('xpSpendInfo').style.display = 'none';
+      document.getElementById('toggleSpendModeBtn').innerHTML = '<i class="fas fa-coins"></i>';
+      if (!saveChanges) renderAll();
+    }
+
+    function getAllCharacters() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    function saveCharacters(chars) { localStorage.setItem(STORAGE_KEY, JSON.stringify(chars)); renderCharacterList(); }
+    function escapeHtml(t){ return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+    
+    function getCurrentCharacterData() {
+      return {
+        id: Date.now() + Math.random(), timestamp: new Date().toISOString(),
+        attributes: {...attributes}, skills: {...skills}, skillSpecs: {...skillSpecs},
+        disciplines: disciplines.map(d=>({...d})), humanity, bloodPotency,
+        meritsFlaws: meritsFlaws.map(m=>({...m})), totalXP,
+        charName: document.getElementById('charName').value,
+        chronicle: document.getElementById('chronicle').value,
+        sire: document.getElementById('sire').value,
+        concept: document.getElementById('concept').value,
+        ambition: document.getElementById('ambition').value,
+        whim: document.getElementById('whim').value,
+        desire: document.getElementById('desire').value,
+        ageEra: document.getElementById('ageEra').value,
+        huntingStyle: document.getElementById('huntingStyle').value,
+        clan: document.getElementById('clan').value,
+        generation: document.getElementById('generation').value,
+        chronicleTheme: document.getElementById('chronicleTheme').value,
+        touchstones: document.getElementById('touchstones').value,
+        clanBane: document.getElementById('clanBane').value,
+        baseMeritPoints, baseFlawPoints
+      };
+    }
+    
+    function loadCharacterData(data) {
+      Object.assign(attributes, data.attributes || {});
+      Object.assign(skills, data.skills || {});
+      Object.assign(skillSpecs, data.skillSpecs || {});
+      disciplines = (data.disciplines || []).map(d=>({...d}));
+      humanity = data.humanity || 7;
+      bloodPotency = data.bloodPotency || 1;
+      meritsFlaws = (data.meritsFlaws || []).map(m=>({...m}));
+      totalXP = data.totalXP || 0;
+      baseMeritPoints = data.baseMeritPoints || 7;
+      baseFlawPoints = data.baseFlawPoints || 2;
+      
+      document.getElementById('charName').value = data.charName || '';
+      document.getElementById('chronicle').value = data.chronicle || '';
+      document.getElementById('sire').value = data.sire || '';
+      document.getElementById('concept').value = data.concept || '';
+      document.getElementById('ambition').value = data.ambition || '';
+      document.getElementById('whim').value = data.whim || '';
+      document.getElementById('desire').value = data.desire || '';
+      document.getElementById('ageEra').value = data.ageEra || '';
+      document.getElementById('huntingStyle').value = data.huntingStyle || '';
+      document.getElementById('clan').value = data.clan || 'Бруха';
+      document.getElementById('generation').value = data.generation || '13-е';
+      document.getElementById('chronicleTheme').value = data.chronicleTheme || '';
+      document.getElementById('touchstones').value = data.touchstones || '';
+      document.getElementById('clanBane').value = data.clanBane || '';
+      
+      disciplinePointsRemaining = { two: 0, one: 0 };
+      usedDisciplines.clear();
+      updateXPDisplay();
+      renderAll();
+      updateAgeInfo();
+    }
+    
+    function renderCharacterList() {
+      const chars = getAllCharacters();
+      const cont = document.getElementById('characterList');
+      if (!chars.length) { cont.innerHTML = '<div style="color:#a58370;padding:20px;text-align:center;">Нет сохранённых персонажей</div>'; return; }
+      cont.innerHTML = chars.sort((a,b)=>b.timestamp.localeCompare(a.timestamp)).map(c=>`
+        <div class="character-card">
+          <div class="character-info">
+            <div class="character-name">${escapeHtml(c.charName||'Безымянный')}</div>
+            <div class="character-details">${escapeHtml(c.clan||'?')} · ${c.totalXP||0} XP</div>
+          </div>
+          <div class="character-actions">
+            <button onclick="loadCharacterById(${c.id})"><i class="fas fa-folder-open"></i></button>
+            <button class="btn-danger" onclick="deleteCharacter(${c.id})"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`).join('');
+    }
+    
+    window.loadCharacterById = (id) => { const c = getAllCharacters().find(x=>x.id===id); if(c) { loadCharacterData(c); huntingSpecOptions=[]; huntingDiscOptions=[]; renderSkillTracker(); } };
+    window.deleteCharacter = (id) => { if(confirm('Удалить?')) saveCharacters(getAllCharacters().filter(c=>c.id!==id)); };
+    
+    window.createNewCharacter = () => {
+      if(confirm('Создать нового?')) {
+        // Сбрасываем ВСЕ атрибуты в 0
+        flatAttrNames.forEach(a => attributes[a] = 0);
+        skillsList.forEach(s => { skills[s] = 0; skillSpecs[s] = ''; });
+        disciplines = []; humanity = 7; bloodPotency = 1; meritsFlaws = []; totalXP = 0;
+        huntingSpecOptions = []; huntingDiscOptions = [];
+        disciplinePointsRemaining = { two: 1, one: 1 };
+        usedDisciplines.clear();
+        baseMeritPoints = 7; baseFlawPoints = 2;
+        ['charName','chronicle','sire','concept','ambition','whim','desire','huntingStyle','chronicleTheme','touchstones','clanBane'].forEach(id=>document.getElementById(id).value='');
+        document.getElementById('ageEra').value = '';
+        document.getElementById('clan').value = 'Бруха';
+        document.getElementById('generation').value = '13-е';
+        updateXPDisplay();
+        renderAll();
+        updateAgeInfo();
+      }
+    };
+    
+    window.openSaveModal = () => { document.getElementById('saveCharName').value = document.getElementById('charName').value || ''; document.getElementById('saveModal').style.display='flex'; };
+    window.closeSaveModal = () => { document.getElementById('saveModal').style.display='none'; };
+    
+    window.confirmSave = () => {
+      const name = document.getElementById('saveCharName').value.trim();
+      if(!name) { alert('Введите имя!'); return; }
+      const chars = getAllCharacters();
+      const data = getCurrentCharacterData();
+      data.charName = name;
+      const idx = chars.findIndex(c=>c.charName===name);
+      if(idx>=0) { if(confirm('Перезаписать?')) { data.id = chars[idx].id; chars[idx] = data; } else return; }
+      else chars.push(data);
+      saveCharacters(chars);
+      closeSaveModal();
+    };
+    
+    window.exportAllCharacters = () => {
+      const blob = new Blob([JSON.stringify(getAllCharacters(), null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vampire_chars_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    function renderAll() { renderAttributes(); renderAttrTracker(); renderSkills(); renderDisciplines(); renderHumanity(); renderBP(); renderMerits(); renderCharacterList(); }
+    
+    function getAttrDistribution() {
+      const counts = [0,0,0,0,0,0];
+      flatAttrNames.forEach(a => counts[attributes[a]||0]++);
+      return counts;
+    }
+    
+    function getExpectedAttrDistribution() {
+      return [0,1,4,3,1,0]; // 1x1, 4x2, 3x3, 1x4
+    }
+    
+    function renderAttrTracker() {
+      const current = getAttrDistribution();
+      const expected = getExpectedAttrDistribution();
+      const remaining = expected.map((e,i) => Math.max(0, e - current[i]));
+      
+      const div = document.getElementById('attrTracker');
+      let html = `<span><i class="fas fa-chart-bar"></i> Характеристики (4/3/3/3/2/2/2/2/1): </span>`;
+      for (let i = 1; i <= 4; i++) {
+        if (remaining[i] > 0) html += `<span class="tracker-badge">${'⬤'.repeat(i)} ×${remaining[i]}</span>`;
+      }
+      if (remaining.every(v => v === 0)) html += `<span class="tracker-badge">✓ Все распределены</span>`;
+      
+      // Показываем превышение
+      for (let i = 1; i <= 5; i++) {
+        if (current[i] > expected[i]) {
+          html += `<span class="tracker-badge" style="background:#4a1a1a;border-color:#a04040;">⚠ Лишних ${'⬤'.repeat(i)} ×${current[i] - expected[i]}</span>`;
+        }
+      }
+      div.innerHTML = html;
+    }
+    
+    function renderAttributes() {
+      const cont = document.getElementById('attributesArea');
+      let h = '';
+      attrCategories.forEach(cat=>{
+        h += `<div class="category-group"><div class="category-title">${cat.category}</div>`;
+        cat.list.forEach(attr=>{
+          const v = attributes[attr]||0;
+          h += `<div class="attr-row"><span class="attr-name">${attr}</span><div class="dot-selector" data-attr="${attr}">`;
+          for(let i=0;i<=5;i++) {
+            if (i === 0) {
+              h += `<span class="dot" data-value="0" style="background:#1a0a06; border-color:#4a2a1a;" title="Сбросить">✕</span>`;
+            } else {
+              h += `<span class="dot ${i<=v?'filled':''}" data-value="${i}"></span>`;
+            }
+          }
+          h += `</div></div>`;
+        });
+        h += `</div>`;
+      });
+      cont.innerHTML = h;
+      updateHealthWill();
+    }
+    
+    function updateHealthWill() {
+      document.getElementById('healthValue').textContent = (attributes['Выносливость']||0) + 3;
+      document.getElementById('willValue').textContent = (attributes['Самообладание']||0) + (attributes['Упорство']||0);
+    }
+    
+    function resetAttrs() {
+      Object.assign(attributes, {Сила:3,Ловкость:3,Выносливость:4,Обаяние:2,Манипуляция:2,Самообладание:3,Интеллект:2,Смекалка:2,Упорство:1});
+      renderAttributes();
+      renderAttrTracker();
+    }
+    
+    function renderSkills() {
+      const cont = document.getElementById('skillsContainer');
+      let h = '';
+      skillsList.forEach(skill=>{
+        const v = skills[skill]||0;
+        h += `<div class="skill-item"><span class="skill-name">${skill}</span><div class="dot-selector" data-skill="${skill}">`;
+        h += `<span class="dot" data-value="0" style="background:#1a0a06; border-color:#4a2a1a;" title="Сбросить">✕</span>`;
+        for(let i=1;i<=5;i++) h += `<span class="dot ${i<=v?'filled':''}" data-value="${i}"></span>`;
+        h += `</div><div class="skill-spec"><input value="${escapeHtml(skillSpecs[skill]||'')}" data-skill-spec="${skill}" placeholder="спец."></div></div>`;
+      });
+      cont.innerHTML = h;
+      renderSkillTracker();
+    }
+    
+    function getSkillSchemeRemaining() {
+      const scheme = document.getElementById('skillSchemeSelect').value;
+      const counts = [0,0,0,0,0,0];
+      skillsList.forEach(s=>counts[skills[s]||0]++);
+      let exp = [];
+      if(scheme==='jack') exp = [0,10,7,1,0,0];
+      else if(scheme==='balanced') exp = [0,7,5,3,0,0];
+      else exp = [0,3,3,3,1,0];
+      return exp.map((e,i)=>Math.max(0, e - counts[i]));
+    }
+    
+    function renderSkillTracker() {
+      const rem = getSkillSchemeRemaining();
+      const div = document.getElementById('pointsRemaining');
+      let h = `<span><i class="fas fa-chart-pie"></i> Навыки: </span>`;
+      for(let i=1;i<=4;i++) if(rem[i]>0) h += `<span class="tracker-badge">${'⬤'.repeat(i)} ×${rem[i]}</span>`;
+      if(rem.every(v=>v===0)) h += `<span class="tracker-badge">✓ Все навыки</span>`;
+      
+      // Проверка превышения
+      const scheme = document.getElementById('skillSchemeSelect').value;
+      const counts = [0,0,0,0,0,0];
+      skillsList.forEach(s=>counts[skills[s]||0]++);
+      let exp = [];
+      if(scheme==='jack') exp = [0,10,7,1,0,0];
+      else if(scheme==='balanced') exp = [0,7,5,3,0,0];
+      else exp = [0,3,3,3,1,0];
+      for (let i=1;i<=5;i++) {
+        if (counts[i] > exp[i]) {
+          h += `<span class="tracker-badge" style="background:#4a1a1a;border-color:#a04040;">⚠ Лишних ${'⬤'.repeat(i)} ×${counts[i] - exp[i]}</span>`;
+        }
+      }
+      
+      div.innerHTML = h;
+      renderDisciplineTracker();
+      renderHuntingSpecChoices();
+      renderHuntingDiscChoices();
+      if (spendMode) updatePendingCost();
+    }
+    
+    function renderDisciplineTracker() {
+      const div = document.getElementById('discPointsTracker');
+      const clan = document.getElementById('clan').value;
+      const allowedDisc = clanDisciplines[clan] || [];
+      
+      let h = `<span><i class="fas fa-skull"></i> Дисциплины: </span>`;
+      if (disciplinePointsRemaining.two > 0) h += `<span class="tracker-badge">2 точки ×${disciplinePointsRemaining.two}</span>`;
+      if (disciplinePointsRemaining.one > 0) h += `<span class="tracker-badge">1 точка ×${disciplinePointsRemaining.one}</span>`;
+      
+      if (disciplinePointsRemaining.two === 0 && disciplinePointsRemaining.one === 0) {
+        h += `<span class="tracker-badge">✓ Готово</span>`;
+      } else {
+        const availableDiscs = allowedDisc.filter(d => !usedDisciplines.has(d));
+        if (availableDiscs.length > 0) {
+          h += `<div style="margin-top:8px;"><select id="discToAddSelect" style="width:150px;">`;
+          availableDiscs.forEach(d => h += `<option>${d}</option>`);
+          h += `</select>`;
+          h += `<button id="addTwoPointsBtn" ${disciplinePointsRemaining.two <= 0 ? 'disabled' : ''}>+2</button>`;
+          h += `<button id="addOnePointBtn" ${disciplinePointsRemaining.one <= 0 ? 'disabled' : ''}>+1</button></div>`;
+        } else {
+          h += `<div style="margin-top:8px;color:#a58370;">Все клановые дисциплины использованы</div>`;
+        }
+      }
+      div.innerHTML = h;
+      
+      document.getElementById('addTwoPointsBtn')?.addEventListener('click', () => {
+        const s = document.getElementById('discToAddSelect');
+        if (s && disciplinePointsRemaining.two > 0) {
+          const discName = s.value;
+          if (!usedDisciplines.has(discName)) {
+            const d = findOrCreateDiscipline(discName);
+            d.dots = Math.min(5, d.dots + 2);
+            usedDisciplines.add(discName);
+            disciplinePointsRemaining.two--;
+            renderDisciplines();
+            renderSkillTracker();
+          }
+        }
+      });
+      
+      document.getElementById('addOnePointBtn')?.addEventListener('click', () => {
+        const s = document.getElementById('discToAddSelect');
+        if (s && disciplinePointsRemaining.one > 0) {
+          const discName = s.value;
+          if (!usedDisciplines.has(discName)) {
+            const d = findOrCreateDiscipline(discName);
+            d.dots = Math.min(5, d.dots + 1);
+            usedDisciplines.add(discName);
+            disciplinePointsRemaining.one--;
+            renderDisciplines();
+            renderSkillTracker();
+          }
+        }
+      });
+    }
+    
+    function renderHuntingSpecChoices() {
+      const c = document.getElementById('huntingSpecChoices');
+      if(!huntingSpecOptions.length) { c.innerHTML=''; return; }
+      let h = `<div><span><i class="fas fa-arrow-right"></i> Специализация:</span></div>`;
+      huntingSpecOptions.forEach((o,i)=>h+=`<label class="spec-choice-item"><input type="radio" name="huntingSpec" value="${i}" data-skill="${o.skill}" data-spec="${o.spec}" ${o.selected?'checked':''}> ${o.skill}: ${o.spec}</label>`);
+      h += `<button id="applyHuntingSpec">Применить</button>`;
+      c.innerHTML = h;
+      document.getElementById('applyHuntingSpec')?.addEventListener('click', ()=>{
+        const sel = document.querySelector('input[name="huntingSpec"]:checked');
+        if(sel) {
+          const skill = sel.dataset.skill, spec = sel.dataset.spec;
+          if(skill && spec) {
+            if(!skillSpecs[skill]) skillSpecs[skill] = spec;
+            else if(!skillSpecs[skill].includes(spec)) skillSpecs[skill] += ', ' + spec;
+            renderSkills();
+            huntingSpecOptions = [];
+            renderSkillTracker();
+          }
+        }
+      });
+    }
+    
+    function renderHuntingDiscChoices() {
+      const c = document.getElementById('huntingDiscChoices');
+      if(!huntingDiscOptions.length) { c.innerHTML=''; return; }
+      let h = `<div><span><i class="fas fa-arrow-right"></i> Дисциплина:</span></div>`;
+      huntingDiscOptions.forEach((o,i)=>h+=`<label class="disc-choice-item"><input type="radio" name="huntingDisc" value="${i}" data-disc="${o.disc}" ${o.selected?'checked':''}> ${o.disc}</label>`);
+      h += `<button id="applyHuntingDisc">Применить</button>`;
+      c.innerHTML = h;
+      document.getElementById('applyHuntingDisc')?.addEventListener('click', ()=>{
+        const sel = document.querySelector('input[name="huntingDisc"]:checked');
+        if(sel) {
+          increaseDiscipline(sel.dataset.disc);
+          renderDisciplines();
+          huntingDiscOptions = [];
+          renderSkillTracker();
+        }
+      });
+    }
+    
+    function findOrCreateDiscipline(name) {
+      let d = disciplines.find(x=>x.name===name);
+      if(!d) { d = {name, dots:0, powersText:''}; disciplines.push(d); }
+      return d;
+    }
+    
+    function increaseDiscipline(name) { if(name) findOrCreateDiscipline(name).dots = Math.min(5, (findOrCreateDiscipline(name).dots||0)+1); }
+    
+    function renderDisciplines() {
+      const div = document.getElementById('disciplinesList');
+      div.innerHTML = disciplines.map((d,i)=>`
+        <div class="discipline-row">
+          <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+            <select data-disc-select="${i}" style="width:140px;">${allDisciplineNames.map(n=>`<option ${d.name===n?'selected':''}>${n}</option>`).join('')}</select>
+            <div class="dot-selector" data-disc-dots="${i}">
+              <span class="dot" data-value="0" style="background:#1a0a06; border-color:#4a2a1a;" title="Сбросить">✕</span>
+              ${[1,2,3,4,5].map(v=>`<span class="dot ${v<=d.dots?'filled':''}" data-value="${v}"></span>`).join('')}
+            </div>
+            <button data-remove-disc="${i}"><i class="fas fa-trash"></i></button>
+          </div>
+          <input value="${escapeHtml(d.powersText)}" data-disc-powers="${i}" placeholder="Силы" style="width:100%;margin-top:5px;">
+        </div>`).join('');
+    }
+    
+    function renderHumanity() {
+      const c = document.getElementById('humanityDots'); c.innerHTML = '';
+      c.appendChild(createDotElement(0, 'Сбросить', '✕'));
+      for(let i=1;i<=10;i++) { 
+        const d = document.createElement('span'); 
+        d.className = `dot ${i<=humanity?'filled':''}`; 
+        d.dataset.value = i; 
+        c.appendChild(d); 
+      }
+      document.getElementById('humanityValLabel').textContent = humanity;
+    }
+    
+    function createDotElement(value, title, content) {
+      const d = document.createElement('span');
+      d.className = 'dot';
+      d.dataset.value = value;
+      d.title = title;
+      d.style.background = '#1a0a06';
+      d.style.borderColor = '#4a2a1a';
+      if (content) d.textContent = content;
+      return d;
+    }
+    
+    function setHumanity(v) { humanity = Math.max(0, Math.min(10, v)); renderHumanity(); }
+    
+    function renderBP() {
+      const c = document.getElementById('bloodPotencyDots'); c.innerHTML = '';
+      c.appendChild(createDotElement(0, 'Сбросить', '✕'));
+      for(let i=1;i<=10;i++) { 
+        const d = document.createElement('span'); 
+        d.className = `dot ${i<=bloodPotency?'filled':''}`; 
+        d.dataset.value = i; 
+        c.appendChild(d); 
+      }
+      document.getElementById('bpValLabel').textContent = bloodPotency;
+      const data = bpTableData[bloodPotency] || bpTableData[1];
+      document.getElementById('bpSurge').value = data?.surge || '';
+      document.getElementById('bpDiscBonus').value = data?.discMod || '';
+      document.getElementById('bpFeeding').value = data?.feeding || '';
+      document.getElementById('bpHealing').value = data?.heal || '';
+      document.getElementById('bpRouse').value = data?.rouse || '';
+      document.getElementById('bpBaneSeverity').value = data?.bane || '';
+    }
+    
+    function setBloodPotency(v) { bloodPotency = Math.max(0, Math.min(10, v)); renderBP(); }
+    
+    function addMeritFlaw(name, cost, desc) { if(name && !meritsFlaws.some(m=>m.name===name)) meritsFlaws.push({name, cost:cost||1, description:desc||''}); }
+    
+    function renderMerits() {
+      const c = document.getElementById('meritsFlawsContainer');
+      c.innerHTML = meritsFlaws.map((m,i)=>`
+        <div class="merit-flaw-item">
+          <input value="${escapeHtml(m.name)}" data-mf-name="${i}" placeholder="Название">
+          <input type="number" min="0" max="5" value="${m.cost}" data-mf-cost="${i}" style="width:60px;">
+          <input value="${escapeHtml(m.description)}" data-mf-desc="${i}" placeholder="Описание" style="flex:1;">
+          <button data-remove-mf="${i}"><i class="fas fa-times"></i></button>
+        </div>`).join('');
+    }
+    
+    function applyHuntingStyle(style) {
+      const warn = document.getElementById('huntingWarning');
+      const clan = document.getElementById('clan').value;
+      huntingSpecOptions = []; huntingDiscOptions = [];
+      if(style==='Суррогатчик' && clan==='Вентру') { warn.textContent='⚠ Вентру не могут'; return; }
+      if(style==='Фермер' && (clan==='Вентру'||bloodPotency>=3)) { warn.textContent='⚠ Недоступно'; return; }
+      warn.textContent = '';
+      
+      const addSpec = (s,sp) => huntingSpecOptions.push({skill:s, spec:sp, selected:!huntingSpecOptions.length});
+      const addDisc = (d) => huntingDiscOptions.push({disc:d, selected:!huntingDiscOptions.length});
+      
+      if(style==='Бестия') { addSpec('Драка','Сородичи'); addSpec('Скрытность','Сородичи'); addDisc('Стремительность'); addDisc('Метаморфозы'); setHumanity(humanity-1); setBloodPotency(bloodPotency+1); addMeritFlaw('Слава: Страшная тайна',2); addMeritFlaw('Разборчивость: смертные',2); }
+      else if(style==='Джентльмен') { addSpec('Медицина','флеботомия'); addSpec('Убеждение','сосуды'); addDisc('Ясновидение'); addDisc('Стойкость'); setHumanity(humanity+1); addMeritFlaw('Страшная тайна',1); addMeritFlaw('Разборчивость',1); }
+      else if(style==='Идол') { addSpec('Оккультизм','традиция'); addSpec('Исполнение','сфера'); addDisc(clan==='Тремер'?'Кровавое чародейство':'Величие'); addMeritFlaw('Слава',3); addMeritFlaw('Стадо',3); addMeritFlaw('Фольклорные недостатки',2); addMeritFlaw('Враги',2); }
+      else if(style==='Искуситель') { addSpec('Убеждение','соблазнение'); addSpec('Хитрость','соблазнение'); addDisc('Стойкость'); addDisc('Величие'); addMeritFlaw('Красивый',2); addMeritFlaw('Враги',1); }
+      else if(style==='Морфей') { addSpec('Медицина','анестезия'); addSpec('Скрытность','проникновение'); addDisc('Ясновидение'); addDisc('Сокрытие'); addMeritFlaw('Богатство',1); }
+      else if(style==='Налетчик') { addSpec('Запугивание','ограбление'); addSpec('Драка','захват'); addDisc('Стремительность'); addDisc('Могущество'); setHumanity(humanity-1); addMeritFlaw('Информаторы',3); }
+      else if(style==='Семьянин') { addSpec('Убеждение','газлайтинг'); addSpec('Хитрость','отговорки'); addDisc('Доминирование'); addDisc('Анимализм'); addMeritFlaw('Страшная тайна',1); addMeritFlaw('Стадо',2); }
+      else if(style==='Суррогатчик') { addSpec('Воровство','взлом'); addSpec('Уличное чутьё','чёрный рынок'); addDisc(clan==='Тремер'?'Кровавое чародейство':'Сокрытие'); addMeritFlaw('Крепкий желудок',3); addMeritFlaw('Враг',2); }
+      else if(style==='Тусовщик') { addSpec('Этикет','тусовка'); addSpec('Лидерство','тусовка'); addSpec('Уличное чутьё','тусовка'); addDisc('Доминирование'); addDisc('Могущество'); addMeritFlaw('Слава',1); addMeritFlaw('Информатор',1); addMeritFlaw('Непопулярный',1); }
+      else if(style==='Фермер') { addSpec('Обращение с животными','вид'); addSpec('Выживание','охота'); addDisc('Анимализм'); addDisc('Метаморфозы'); setHumanity(humanity+1); addMeritFlaw('Фермер',2); }
+      else if(style==='Вымогатель') { addSpec('Запугивание','ограбление'); addSpec('Драка','захват'); addDisc('Стремительность'); addDisc('Могущество'); addMeritFlaw('Информаторы',3); addMeritFlaw('Враг',2); }
+      else if(style==='Расхититель могил') { addSpec('Оккультизм','ритуалы'); addSpec('Медицина','трупы'); addDisc('Стойкость'); addDisc('Обливион'); addMeritFlaw('Крепкий желудок',3); addMeritFlaw('Убежище',1); addMeritFlaw('Очевидный хищник',2); }
+      else if(style==='Мрачный жнец') { addSpec('Наблюдательность','Смерть'); addSpec('Воровство','Подделка'); addDisc('Ясновидение'); addDisc('Обливион'); addMeritFlaw('Союзники',1); setHumanity(humanity+1); addMeritFlaw('Исключение добычи',1); }
+      else if(style==='Монтеро') { addSpec('Лидерство','Стая'); addSpec('Скрытность','Разведка'); addDisc('Доминирование'); addDisc('Сокрытие'); addMeritFlaw('Подручные',2); setHumanity(humanity-1); }
+      else if(style==='Преследователь') { addSpec('Расследование','профиль'); addSpec('Скрытность','тень'); addDisc('Анимализм'); addDisc('Ясновидение'); addMeritFlaw('Ищейка',1); addMeritFlaw('Контакты',1); setHumanity(humanity-1); }
+      else if(style==='Лазутчик') { addSpec('Убеждение','маркетинг'); addSpec('Скрытность','ловушки'); addDisc('Метаморфозы'); addDisc('Сокрытие'); addMeritFlaw('Убежище',1); addMeritFlaw('Подручные/Стадо',1); addMeritFlaw('Жуткое место',1); }
+      
+      renderSkills(); renderDisciplines(); renderMerits();
+    }
+
+    function init() {
+      document.getElementById('bpTable').innerHTML = `
+        <div>Мод. прилива</div><div><input id="bpSurge"></div>
+        <div>Исцеление</div><div><input id="bpHealing"></div>
+        <div>Мод. дисциплин</div><div><input id="bpDiscBonus"></div>
+        <div>Повтор крови</div><div><input id="bpRouse"></div>
+        <div>Тяжесть изъяна</div><div><input id="bpBaneSeverity"></div>
+        <div>Проблемы питания</div><div><input id="bpFeeding"></div>
+      `;
+      
+      // Сбрасываем все атрибуты в 0 при старте
+      flatAttrNames.forEach(a => attributes[a] = 0);
+      skillsList.forEach(s => { skills[s] = 0; skillSpecs[s] = ''; });
+      
+      renderAll(); 
+      updateAgeInfo(); 
+      updateXPDisplay();
+      
+      document.getElementById('attributesArea').addEventListener('click', e=>{ 
+        const d=e.target.closest('.dot'); 
+        if(d){ 
+          const a=d.closest('[data-attr]')?.dataset.attr; 
+          if(a){ 
+            attributes[a]=parseInt(d.dataset.value); 
+            renderAttributes(); 
+            renderAttrTracker();
+            if(spendMode) updatePendingCost(); 
+          }
+        }
+      });
+      document.getElementById('resetAttrsBtn').addEventListener('click', ()=>{ resetAttrs(); renderAttrTracker(); });
+      document.getElementById('skillsContainer').addEventListener('click', e=>{ 
+        const d=e.target.closest('.dot'); 
+        if(d){ 
+          const s=d.closest('[data-skill]')?.dataset.skill; 
+          if(s){ 
+            skills[s]=parseInt(d.dataset.value); 
+            renderSkills(); 
+          }
+        }
+      });
+      document.getElementById('skillsContainer').addEventListener('input', e=>{ if(e.target.dataset.skillSpec) { skillSpecs[e.target.dataset.skillSpec]=e.target.value; if(spendMode) updatePendingCost(); }});
+      document.getElementById('applySkillScheme').addEventListener('click', ()=>{ 
+        skillsList.forEach(s=>skills[s]=0); 
+        const scheme=document.getElementById('skillSchemeSelect').value; 
+        let idx=0; 
+        const arr=skillsList.slice(); 
+        const set=(c,v)=>{ for(let i=0;i<c&&idx<arr.length;i++) skills[arr[idx++]]=v; }; 
+        if(scheme==='jack'){ set(1,3); set(7,2); set(10,1); } 
+        else if(scheme==='balanced'){ set(3,3); set(5,2); set(7,1); } 
+        else { set(1,4); set(3,3); set(3,2); set(3,1); } 
+        renderSkills(); 
+      });
+      document.getElementById('disciplinesList').addEventListener('click', e=>{ 
+        const t=e.target; 
+        const row=t.closest('.discipline-row'); 
+        if(!row) return; 
+        const sel=row.querySelector('select'); 
+        const idx=sel?.dataset.discSelect; 
+        if(idx===undefined) return; 
+        if(t.matches('select')) disciplines[idx].name=t.value; 
+        if(t.classList.contains('dot')){ 
+          disciplines[idx].dots=parseInt(t.dataset.value); 
+          renderDisciplines(); 
+          if(spendMode) updatePendingCost(); 
+        } 
+        if(t.dataset.removeDisc!==undefined||t.closest('[data-remove-disc]')){ 
+          const removedName = disciplines[idx].name; 
+          disciplines.splice(idx,1); 
+          usedDisciplines.delete(removedName); 
+          renderDisciplines(); 
+          renderSkillTracker(); 
+        } 
+      });
+      document.getElementById('disciplinesList').addEventListener('input', e=>{ if(e.target.dataset.discPowers!==undefined){ disciplines[e.target.dataset.discPowers].powersText=e.target.value; }});
+      document.getElementById('addDisciplineBtn').addEventListener('click', ()=>{ 
+        const clan=document.getElementById('clan').value; 
+        const allowed=clanDisciplines[clan]||allDisciplineNames; 
+        disciplines.push({name:allowed[0],dots:0,powersText:''}); 
+        renderDisciplines(); 
+      });
+      document.getElementById('humanityDots').addEventListener('click', e=>{ 
+        const d=e.target.closest('.dot'); 
+        if(d) setHumanity(parseInt(d.dataset.value)); 
+      });
+      document.getElementById('bloodPotencyDots').addEventListener('click', e=>{ 
+        const d=e.target.closest('.dot'); 
+        if(d) { 
+          setBloodPotency(parseInt(d.dataset.value)); 
+          if(spendMode) updatePendingCost(); 
+        }
+      });
+      document.getElementById('meritsFlawsContainer').addEventListener('input', e=>{ 
+        const t=e.target; 
+        const idx=t.dataset.mfName||t.dataset.mfCost||t.dataset.mfDesc; 
+        if(idx!==undefined){ 
+          if(t.dataset.mfName!==undefined) meritsFlaws[idx].name=t.value; 
+          if(t.dataset.mfCost!==undefined) meritsFlaws[idx].cost=parseInt(t.value)||0; 
+          if(t.dataset.mfDesc!==undefined) meritsFlaws[idx].description=t.value; 
+          if(spendMode) updatePendingCost(); 
+        }
+      });
+      document.getElementById('meritsFlawsContainer').addEventListener('click', e=>{ 
+        const b=e.target.closest('[data-remove-mf]'); 
+        if(b){ meritsFlaws.splice(b.dataset.removeMf,1); renderMerits(); 
+        }
+      });
+      document.getElementById('addMeritFlawBtn').addEventListener('click', ()=>{ meritsFlaws.push({name:'',cost:0,description:''}); renderMerits(); });
+      document.getElementById('ageEra').addEventListener('change', updateAgeInfo);
+      document.getElementById('huntingStyle').addEventListener('change', e=>applyHuntingStyle(e.target.value));
+      document.getElementById('clan').addEventListener('change', ()=>{ 
+        usedDisciplines.clear(); 
+        disciplinePointsRemaining = { two: 1, one: 1 }; 
+        const s=document.getElementById('huntingStyle').value; 
+        if(s) applyHuntingStyle(s); 
+        renderDisciplineTracker(); 
+      });
+      document.getElementById('importFile').addEventListener('change', function(e){ 
+        const f=e.target.files[0]; 
+        if(!f) return; 
+        const r=new FileReader(); 
+        r.onload=ev=>{ 
+          try{ 
+            const imp=JSON.parse(ev.target.result); 
+            if(!Array.isArray(imp)) throw new Error(); 
+            const exist=getAllCharacters(); 
+            imp.forEach(c=>{ 
+              const idx=exist.findIndex(x=>x.id===c.id); 
+              if(idx>=0){ if(confirm(`Заменить ${c.charName}?`)) exist[idx]=c; } 
+              else exist.push(c); 
+            }); 
+            saveCharacters(exist); 
+          }catch(err){ alert('Ошибка файла'); } 
+          e.target.value=''; 
+        }; 
+        r.readAsText(f); 
+      });
+      
+      document.getElementById('toggleSpendModeBtn').addEventListener('click', ()=>{ if(spendMode) cancelXPSpend(); else startSpendMode(); });
+      document.getElementById('addXPBtn').addEventListener('click', ()=>{ totalXP += 5; updateXPDisplay(); });
+      document.getElementById('applyXPSpendBtn').addEventListener('click', applyXPSpend);
+      document.getElementById('cancelXPSpendBtn').addEventListener('click', cancelXPSpend);
+    }
+    
+    init();
+})();
+</script>
